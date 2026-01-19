@@ -1,12 +1,17 @@
 import java.io.IOException;
 import java.nio.channels.SocketChannel;
 
+import java.io.IOException;
+import java.nio.channels.SocketChannel;
+import java.util.List;
+
 /**
  * CommandHandler:
- * - Strategy / Command pattern for handling Redis commands.
- * - For now, only PING is needed.
- * - Later you can add handleSet, handleGet, etc.
+ *  - Handles Redis-style commands parsed from RESP.
+ *  - commandArgs.get(0) is the command name (e.g. "PING", "ECHO").
+ *  - Remaining elements are arguments.
  */
 public interface CommandHandler {
-    void handlePing(SocketChannel clientChannel) throws IOException;
+    void handleCommand(SocketChannel clientChannel, List<String> commandArgs) throws IOException;
 }
+

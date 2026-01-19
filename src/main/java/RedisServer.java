@@ -6,8 +6,8 @@ import java.util.Set;
 
 /**
  * RedisServer
- * - Implements a simple event loop using Java NIO (Selector + Channels)
- * - Accepts multiple clients and reads from whichever is ready
+ * - Implements an event loop using Java NIO (Selector + Channels)
+ * - Accepts multiple clients and delegates I/O to ClientSession
  */
 public class RedisServer {
     private final int port;
@@ -93,9 +93,9 @@ public class RedisServer {
         }
 
         ClientSession session = (ClientSession) attachment;
-        boolean stillOpen = session.readFromClient(commandHandler);
+        boolean open = session.readFromClient(commandHandler);
 
-        if (!stillOpen) {
+        if (!open) {
             closeKey(key);
         }
     }
