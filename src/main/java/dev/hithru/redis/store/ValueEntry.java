@@ -1,3 +1,4 @@
+package dev.hithru.redis.store;
 public class ValueEntry {
     private final String value;
     private final Long expireAtMs; // null means no expiry

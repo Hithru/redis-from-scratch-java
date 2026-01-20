@@ -1,4 +1,9 @@
+package dev.hithru.redis;
 import java.io.IOException;
+
+import dev.hithru.redis.command.CommandHandler;
+import dev.hithru.redis.command.SimpleCommandHandler;
+import dev.hithru.redis.server.RedisServer;
 
 public class Main {
     public static void main(String[] args) {

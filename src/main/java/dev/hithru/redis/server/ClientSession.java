@@ -1,8 +1,12 @@
+package dev.hithru.redis.server;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+
+import dev.hithru.redis.command.CommandHandler;
+import dev.hithru.redis.protocol.RespParser;
 
 /**
  * Represents the state for a single client connection.

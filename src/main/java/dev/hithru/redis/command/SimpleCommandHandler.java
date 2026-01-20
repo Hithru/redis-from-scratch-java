@@ -1,14 +1,16 @@
+package dev.hithru.redis.command;
+
+import dev.hithru.redis.protocol.RespWriter;
+import dev.hithru.redis.store.InMemoryKeyValueStore;
+
 import java.io.IOException;
 import java.nio.channels.SocketChannel;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 
 public class SimpleCommandHandler implements CommandHandler {
 
-    // In-memory key-value store with optional expiry
-    private final Map<String, ValueEntry> store = new HashMap<>();
+    private final InMemoryKeyValueStore store = new InMemoryKeyValueStore();
 
     @Override
     public void handleCommand(SocketChannel clientChannel, List<String> commandArgs) throws IOException {
@@ -28,10 +30,7 @@ public class SimpleCommandHandler implements CommandHandler {
         }
     }
 
-    // ----- PING -----
-
     private void handlePing(SocketChannel clientChannel, List<String> args) throws IOException {
-        // PING or PING <message>
         if (args.size() == 1) {
             RespWriter.writeSimpleString(clientChannel, "PONG");
         } else {
@@ -39,8 +38,6 @@ public class SimpleCommandHandler implements CommandHandler {
             RespWriter.writeBulkString(clientChannel, msg);
         }
     }
-
-    // ----- ECHO -----
 
     private void handleEcho(SocketChannel clientChannel, List<String> args) throws IOException {
         if (args.size() < 2) {
@@ -51,8 +48,7 @@ public class SimpleCommandHandler implements CommandHandler {
         RespWriter.writeBulkString(clientChannel, msg);
     }
 
-    // ----- SET -----
-    // SET key value [PX milliseconds]
+    // SET key value [PX ms]
     private void handleSet(SocketChannel clientChannel, List<String> args) throws IOException {
         if (args.size() < 3) {
             RespWriter.writeError(clientChannel, "ERR wrong number of arguments for 'SET'");
@@ -62,9 +58,7 @@ public class SimpleCommandHandler implements CommandHandler {
         String key = args.get(1);
         String value = args.get(2);
 
-        Long expireAtMs = null; // no expiry by default
-
-        // Parse optional arguments: currently only PX <ms>
+        Long expireAtMs = null;
         int i = 3;
         long now = System.currentTimeMillis();
 
@@ -86,19 +80,15 @@ public class SimpleCommandHandler implements CommandHandler {
                 expireAtMs = now + ttlMs;
                 i += 2;
             } else {
-                // Unknown option; for now just treat as syntax error
                 RespWriter.writeError(clientChannel, "ERR syntax error");
                 return;
             }
         }
 
-        store.put(key, new ValueEntry(value, expireAtMs));
-
+        store.set(key, value, expireAtMs);
         RespWriter.writeSimpleString(clientChannel, "OK");
     }
 
-    // ----- GET -----
-    // GET key -> Bulk string or Null bulk string
     private void handleGet(SocketChannel clientChannel, List<String> args) throws IOException {
         if (args.size() < 2) {
             RespWriter.writeError(clientChannel, "ERR wrong number of arguments for 'GET'");
@@ -107,20 +97,16 @@ public class SimpleCommandHandler implements CommandHandler {
 
         String key = args.get(1);
         long now = System.currentTimeMillis();
+        String value = store.get(key, now);
 
-        ValueEntry entry = store.get(key);
-        if (entry == null) {
+        if (value == null) {
             RespWriter.writeNullBulkString(clientChannel);
-            return;
+        } else {
+            RespWriter.writeBulkString(clientChannel, value);
         }
+    }
 
-        // Passive expiration check
-        if (entry.isExpired(now)) {
-            store.remove(key);
-            RespWriter.writeNullBulkString(clientChannel);
-            return;
-        }
-
-        RespWriter.writeBulkString(clientChannel, entry.getValue());
+    InMemoryKeyValueStore getStore() {
+        return store;
     }
 }
