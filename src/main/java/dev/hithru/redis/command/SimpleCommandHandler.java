@@ -2,15 +2,18 @@ package dev.hithru.redis.command;
 
 import dev.hithru.redis.protocol.RespWriter;
 import dev.hithru.redis.store.InMemoryKeyValueStore;
+import dev.hithru.redis.store.list.InMemoryListStore;
 
 import java.io.IOException;
 import java.nio.channels.SocketChannel;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
 public class SimpleCommandHandler implements CommandHandler {
 
     private final InMemoryKeyValueStore store = new InMemoryKeyValueStore();
+    private final InMemoryListStore listStore = new InMemoryListStore();
 
     @Override
     public void handleCommand(SocketChannel clientChannel, List<String> commandArgs) throws IOException {
@@ -26,6 +29,7 @@ public class SimpleCommandHandler implements CommandHandler {
             case "ECHO" -> handleEcho(clientChannel, commandArgs);
             case "SET"  -> handleSet(clientChannel, commandArgs);
             case "GET"  -> handleGet(clientChannel, commandArgs);
+            case "RPUSH" -> handleRpush(clientChannel, commandArgs);
             default -> RespWriter.writeError(clientChannel, "ERR unknown command '" + cmd + "'");
         }
     }
@@ -104,6 +108,29 @@ public class SimpleCommandHandler implements CommandHandler {
         } else {
             RespWriter.writeBulkString(clientChannel, value);
         }
+    }
+
+    // RPUSH key value [value ...] -> :<new_length>
+    private void handleRpush(SocketChannel clientChannel, List<String> args) throws IOException {
+        if (args.size() < 3) {
+            RespWriter.writeError(clientChannel, "ERR wrong number of arguments for 'RPUSH'");
+            return;
+        }
+
+        String key = args.get(1);
+
+        List<String> valuesToAppend = new ArrayList<>(args.size() - 2);
+        for (int i = 2; i < args.size(); i++) {
+            valuesToAppend.add(args.get(i));
+        }
+
+        int newLength = listStore.rpush(key, valuesToAppend);
+
+        RespWriter.writeInteger(clientChannel, newLength);
+    }
+
+    InMemoryKeyValueStore getStringStore() {
+        return store;
     }
 
     InMemoryKeyValueStore getStore() {
