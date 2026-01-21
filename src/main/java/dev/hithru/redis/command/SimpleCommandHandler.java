@@ -30,6 +30,7 @@ public class SimpleCommandHandler implements CommandHandler {
             case "SET"  -> handleSet(clientChannel, commandArgs);
             case "GET"  -> handleGet(clientChannel, commandArgs);
             case "RPUSH" -> handleRpush(clientChannel, commandArgs);
+            case "LRANGE" -> handleLrange(clientChannel, commandArgs);
             default -> RespWriter.writeError(clientChannel, "ERR unknown command '" + cmd + "'");
         }
     }
@@ -127,6 +128,30 @@ public class SimpleCommandHandler implements CommandHandler {
         int newLength = listStore.rpush(key, valuesToAppend);
 
         RespWriter.writeInteger(clientChannel, newLength);
+    }
+
+       private void handleLrange(SocketChannel clientChannel, List<String> args) throws IOException {
+        // LRANGE key start stop
+        if (args.size() < 4) {
+            RespWriter.writeError(clientChannel, "ERR wrong number of arguments for 'LRANGE'");
+            return;
+        }
+
+        String key = args.get(1);
+        int start;
+        int stop;
+        try {
+            start = Integer.parseInt(args.get(2));
+            stop = Integer.parseInt(args.get(3));
+        } catch (NumberFormatException e) {
+            RespWriter.writeError(clientChannel, "ERR value is not an integer or out of range");
+            return;
+        }
+
+
+        List<String> range = listStore.lrange(key, start, stop);
+
+        RespWriter.writeArrayOfBulkStrings(clientChannel, range);
     }
 
     InMemoryKeyValueStore getStringStore() {

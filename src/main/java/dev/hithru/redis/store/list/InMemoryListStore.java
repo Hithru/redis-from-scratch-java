@@ -21,6 +21,63 @@ public class InMemoryListStore {
         return list.size();
     }
 
+    /**
+     * LRANGE key start stop with support for negative indexes.
+     *
+     * Rules:
+     *  - Missing key -> empty list
+     *  - Negative index = offset from end (-1 = last, -2 = second last, etc.)
+     *  - Negative index out of range (e.g. -6 on len 5) is treated as 0
+     *  - start >= len -> empty
+     *  - stop >= len -> clamp to len - 1
+     *  - start > stop -> empty
+     */
+    public List<String> lrange(String key, int start, int stop) {
+        List<String> list = lists.get(key);
+        if (list == null) {
+            return Collections.emptyList();
+        }
+
+        int size = list.size();
+        if (size == 0) {
+            return Collections.emptyList();
+        }
+
+        // Convert negative indexes to positive offsets from end
+        if (start < 0) {
+            start = size + start;
+        }
+        if (stop < 0) {
+            stop = size + stop;
+        }
+
+        // Out-of-range negative indexes become 0 
+        if (start < 0) {
+            start = 0;
+        }
+        if (stop < 0) {
+            stop = 0;
+        }
+
+        // If start is past the end => empty
+        if (start >= size) {
+            return Collections.emptyList();
+        }
+
+        // Clamp stop to last index
+        if (stop >= size) {
+            stop = size - 1;
+        }
+
+        // If range is inverted => empty
+        if (start > stop) {
+            return Collections.emptyList();
+        }
+
+        // Return a copy of the slice [start, stop] inclusive
+        return new ArrayList<>(list.subList(start, stop + 1));
+    }
+    
     public List<String> getList(String key) {
         return lists.get(key);
     }
