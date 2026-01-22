@@ -76,4 +76,9 @@ public class RespWriter {
             writeBulkString(channel, value);
         }
     }
+
+    public static void writeNullArray(SocketChannel channel) throws IOException {
+        String resp = "*-1" + CRLF;
+        writeAll(channel, resp.getBytes(StandardCharsets.UTF_8));
+    }
 }
