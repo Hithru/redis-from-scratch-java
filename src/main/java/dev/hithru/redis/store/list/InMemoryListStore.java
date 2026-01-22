@@ -92,6 +92,26 @@ public class InMemoryListStore {
         return new ArrayList<>(list.subList(start, stop + 1));
     }
     
+    /**
+     * LPOP key -> returns removed value or null if list missing/empty.
+     * If the list becomes empty after pop, the key is removed.
+     */
+    public String lpop(String key) {
+        List<String> list = lists.get(key);
+        if (list == null || list.isEmpty()) {
+            return null;
+        }
+
+        String value = list.remove(0);
+
+        // Match Redis behavior: delete key when list becomes empty
+        if (list.isEmpty()) {
+            lists.remove(key);
+        }
+
+        return value;
+    }
+
     public List<String> getList(String key) {
         return lists.get(key);
     }

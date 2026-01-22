@@ -33,6 +33,7 @@ public class SimpleCommandHandler implements CommandHandler {
             case "LPUSH"  -> handleLpush(clientChannel, commandArgs);
             case "LRANGE" -> handleLrange(clientChannel, commandArgs);
             case "LLEN"   -> handleLlen(clientChannel, commandArgs);
+            case "LPOP"   -> handleLpop(clientChannel, commandArgs);
             default -> RespWriter.writeError(clientChannel, "ERR unknown command '" + cmd + "'");
         }
     }
@@ -184,6 +185,25 @@ public class SimpleCommandHandler implements CommandHandler {
         int length = listStore.size(key);
 
         RespWriter.writeInteger(clientChannel, length);
+    }
+
+    private void handleLpop(SocketChannel clientChannel, List<String> args) throws IOException {
+        // LPOP key
+        if (args.size() < 2) {
+            RespWriter.writeError(clientChannel, "ERR wrong number of arguments for 'LPOP'");
+            return;
+        }
+
+        String key = args.get(1);
+        String value = listStore.lpop(key);
+
+        if (value == null) {
+            // List missing or empty -> null bulk string
+            RespWriter.writeNullBulkString(clientChannel);
+        } else {
+            // Return the popped value as bulk string
+            RespWriter.writeBulkString(clientChannel, value);
+        }
     }
 
     InMemoryKeyValueStore getStringStore() {
