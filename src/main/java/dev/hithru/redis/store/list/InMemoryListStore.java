@@ -112,6 +112,30 @@ public class InMemoryListStore {
         return value;
     }
 
+    /**
+     * LPOP key count -> returns up to 'count' removed elements from the head.
+     * If list has fewer than 'count' elements, all are removed.
+     * If list missing or empty, returns an empty list.
+     */
+    public List<String> lpopMany(String key, int count) {
+        List<String> list = lists.get(key);
+        if (list == null || list.isEmpty() || count <= 0) {
+            return Collections.emptyList();
+        }
+
+        int actualCount = Math.min(count, list.size());
+
+        List<String> removed = new ArrayList<>(list.subList(0, actualCount));
+        // Remove the first actualCount elements
+        list.subList(0, actualCount).clear();
+
+        if (list.isEmpty()) {
+            lists.remove(key);
+        }
+
+        return removed;
+    }
+
     public List<String> getList(String key) {
         return lists.get(key);
     }

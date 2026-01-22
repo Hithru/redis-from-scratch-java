@@ -188,21 +188,39 @@ public class SimpleCommandHandler implements CommandHandler {
     }
 
     private void handleLpop(SocketChannel clientChannel, List<String> args) throws IOException {
-        // LPOP key
+
         if (args.size() < 2) {
             RespWriter.writeError(clientChannel, "ERR wrong number of arguments for 'LPOP'");
             return;
         }
 
         String key = args.get(1);
-        String value = listStore.lpop(key);
 
-        if (value == null) {
-            // List missing or empty -> null bulk string
-            RespWriter.writeNullBulkString(clientChannel);
+        if (args.size() == 2) {
+            String value = listStore.lpop(key);
+            if (value == null) {
+                RespWriter.writeNullBulkString(clientChannel);
+            } else {
+                RespWriter.writeBulkString(clientChannel, value);
+            }
+        } else if (args.size() == 3) {
+            int count;
+            try {
+                count = Integer.parseInt(args.get(2));
+            } catch (NumberFormatException e) {
+                RespWriter.writeError(clientChannel, "ERR value is not an integer or out of range");
+                return;
+            }
+
+            if (count <= 0) {
+                RespWriter.writeArrayOfBulkStrings(clientChannel, List.of());
+                return;
+            }
+
+            var removed = listStore.lpopMany(key, count);
+            RespWriter.writeArrayOfBulkStrings(clientChannel, removed);
         } else {
-            // Return the popped value as bulk string
-            RespWriter.writeBulkString(clientChannel, value);
+            RespWriter.writeError(clientChannel, "ERR wrong number of arguments for 'LPOP'");
         }
     }
 
