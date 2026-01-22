@@ -30,6 +30,7 @@ public class SimpleCommandHandler implements CommandHandler {
             case "SET"  -> handleSet(clientChannel, commandArgs);
             case "GET"  -> handleGet(clientChannel, commandArgs);
             case "RPUSH" -> handleRpush(clientChannel, commandArgs);
+            case "LPUSH"  -> handleLpush(clientChannel, commandArgs);
             case "LRANGE" -> handleLrange(clientChannel, commandArgs);
             default -> RespWriter.writeError(clientChannel, "ERR unknown command '" + cmd + "'");
         }
@@ -130,7 +131,25 @@ public class SimpleCommandHandler implements CommandHandler {
         RespWriter.writeInteger(clientChannel, newLength);
     }
 
-       private void handleLrange(SocketChannel clientChannel, List<String> args) throws IOException {
+    private void handleLpush(SocketChannel clientChannel, List<String> args) throws IOException {
+        if (args.size() < 3) {
+            RespWriter.writeError(clientChannel, "ERR wrong number of arguments for 'LPUSH'");
+            return;
+        }
+
+        String key = args.get(1);
+
+        List<String> valuesToPrepend = new ArrayList<>(args.size() - 2);
+        for (int i = 2; i < args.size(); i++) {
+            valuesToPrepend.add(args.get(i));
+        }
+
+        int newLength = listStore.lpush(key, valuesToPrepend);
+
+        RespWriter.writeInteger(clientChannel, newLength);
+    }
+
+    private void handleLrange(SocketChannel clientChannel, List<String> args) throws IOException {
         // LRANGE key start stop
         if (args.size() < 4) {
             RespWriter.writeError(clientChannel, "ERR wrong number of arguments for 'LRANGE'");

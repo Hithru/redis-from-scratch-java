@@ -22,6 +22,20 @@ public class InMemoryListStore {
     }
 
     /**
+     * LPUSH key value... -> returns new length
+     * Values are prepended so that:
+     *   LPUSH key a b c
+     * results in list [c, b, a].
+     */
+    public int lpush(String key, List<String> values) {
+        List<String> list = lists.computeIfAbsent(key, k -> new ArrayList<>());
+        for (String value : values) {
+            list.add(0, value);
+        }
+        return list.size();
+    }
+
+    /**
      * LRANGE key start stop with support for negative indexes.
      *
      * Rules:
