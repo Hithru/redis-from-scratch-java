@@ -14,5 +14,10 @@ import java.util.List;
  */
 public interface CommandHandler {
     void handleCommand(SocketChannel clientChannel, List<String> commandArgs) throws IOException;
+
+    // Called periodically by the server to handle time-based tasks (like BLPOP timeouts)
+    default void onTick() throws IOException {
+        // default no-op
+    }
 }
 

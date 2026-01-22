@@ -14,20 +14,28 @@ The goal of this project is to learn and experiment with:
 ## Current Features
 
 - Non-blocking event loop server (single-threaded, multiple clients)
-- RESP parsing (arrays of bulk strings) and encoding (simple string, bulk string, null bulk)
+- RESP parsing (arrays of bulk strings) and encoding (simple string, bulk string, null bulk, arrays)
 - Commands:
   - `PING`
   - `ECHO <msg>`
   - `SET key value`
   - `SET key value PX <ms>` (millisecond expiry, passive)
   - `GET key` (null when missing or expired)
+  - List commands:
+    - `RPUSH key value [value ...]`
+    - `LPUSH key value [value ...]`
+    - `LRANGE key start stop` (supports negative indexes)
+    - `LLEN key`
+    - `LPOP key` and `LPOP key count`
+    - `BLPOP key timeout` (blocking pop with FIFO waiters and timeouts)
 - In-memory key–value store with optional expiry
+- In-memory list store with basic list semantics
 
 ---
 
 ## Planned Features (later)
 
-- Lists, sorted sets, streams
+- Sorted sets, streams
 - Pub/Sub
 - Transactions
 - Replication
@@ -97,6 +105,15 @@ redis-cli SET foo bar
 redis-cli GET foo
 redis-cli SET temp value PX 100
 sleep 0.2 && redis-cli GET temp
+```
+
+You can also try some list commands:
+
+```
+redis-cli RPUSH list_key a b c d e
+redis-cli LRANGE list_key 0 -1
+redis-cli LPOP list_key
+redis-cli BLPOP blocking_list 5
 ```
 
 ## How to Run Tests

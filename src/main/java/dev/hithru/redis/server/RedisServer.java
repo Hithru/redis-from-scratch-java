@@ -44,8 +44,8 @@ public class RedisServer {
 
     private void eventLoop() throws IOException {
         while (true) {
-            // Block until at least one channel is ready
-            selector.select();
+            // Wait up to 100ms for I/O, then we’ll also check timeouts
+            selector.select(100);
 
             Set<SelectionKey> selectedKeys = selector.selectedKeys();
             Iterator<SelectionKey> iter = selectedKeys.iterator();
@@ -68,6 +68,13 @@ public class RedisServer {
                     closeKey(key);
                     System.out.println("Client error: " + e.getMessage());
                 }
+            }
+
+            // After handling I/O, let the handler process timeouts
+            try {
+                commandHandler.onTick();
+            } catch (IOException e) {
+                System.out.println("Error in handler tick: " + e.getMessage());
             }
         }
     }

@@ -3,6 +3,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 
 /**
  * RespWriter
@@ -64,5 +65,20 @@ public class RespWriter {
         while (buffer.hasRemaining()) {
             channel.write(buffer);
         }
+    }
+
+    public static void writeArrayOfBulkStrings(SocketChannel channel, List<String> values) throws IOException {
+        // Array header: *<count>\r\n
+        String header = "*" + values.size() + CRLF;
+        writeAll(channel, header.getBytes(StandardCharsets.UTF_8));
+
+        for (String value : values) {
+            writeBulkString(channel, value);
+        }
+    }
+
+    public static void writeNullArray(SocketChannel channel) throws IOException {
+        String resp = "*-1" + CRLF;
+        writeAll(channel, resp.getBytes(StandardCharsets.UTF_8));
     }
 }
