@@ -53,6 +53,7 @@ public class SimpleCommandHandler implements CommandHandler {
             case "LLEN"   -> handleLlen(clientChannel, commandArgs);
             case "LPOP"   -> handleLpop(clientChannel, commandArgs);
             case "BLPOP"  -> handleBlpop(clientChannel, commandArgs);
+            case "TYPE"   -> handleType(clientChannel, commandArgs);
             default -> RespWriter.writeError(clientChannel, "ERR unknown command '" + cmd + "'");
         }
     }
@@ -366,6 +367,35 @@ public class SimpleCommandHandler implements CommandHandler {
         }
     }
 
+
+    private void handleType(SocketChannel clientChannel, List<String> args) throws IOException {
+        // TYPE key
+        if (args.size() < 2) {
+            RespWriter.writeError(clientChannel, "ERR wrong number of arguments for 'TYPE'");
+            return;
+        }
+
+        String key = args.get(1);
+        long now = System.currentTimeMillis();
+
+        String type;
+
+        // 1. Check string keys (respecting expiry)
+        String stringValue = store.get(key, now);
+        if (stringValue != null) {
+            type = "string";
+        }
+        // 2. Check lists (for your own consistency; not required by the current stage)
+        else if (listStore.exists(key)) {
+            type = "list";
+        }
+        // 3. Missing key
+        else {
+            type = "none";
+        }
+
+        RespWriter.writeSimpleString(clientChannel, type);
+    }
 
 
     InMemoryKeyValueStore getStringStore() {
